@@ -1,0 +1,194 @@
+#include <stdio.h>
+#include <conio.h>
+#include <stdlib.h>
+#include <string.h>
+
+struct funcionario
+ { char nome[38];
+   int  codigo;
+   float salario;
+   int e;
+ }f;
+
+FILE *fptr;
+
+void cadastrar_funcionarios();
+void consultar_todos_funcionarios();
+void alterar_funcionarios();
+void exclusao_logica_funcionarios();
+void exclusao_fisica_funcionarios();
+void ordenar_crescente_pelo_codigo_dos_funcionarios();
+void ordenar_decrescente_pelo_nome_dos_funcionarios();
+int busca_binaria_funcionario();
+
+
+
+int main()
+{ char opc;
+  int pos;
+
+  do
+    {
+
+      system("cls");
+      printf("\n  1 - Cadastro");
+      printf("\n  2 - Consulta todos os funcionarios");
+      printf("\n  3 - Alteracao do salario");
+      printf("\n  4 - Exclusao Logica");
+      printf("\n  5 - Exclusao Fisica");
+      printf("\n  6 - Ordenacao pelo codigo");
+      printf("\n  7 - Busca Binaria");
+      printf("\n  9 - Sair ");
+      printf("\n Opcao: ");
+      opc=getche();
+      switch(opc)
+      { case '1': cadastrar_funcionarios();
+                  break;
+        case '2': consultar_todos_funcionarios();
+                  break;
+        case '3': alterar_funcionarios();
+                  break;
+        case '4': exclusao_logica_funcionarios();
+                  break;
+        case '5': exclusao_fisica_funcionarios();
+                  break;
+        case '6': ordenar_crescente_pelo_codigo_dos_funcionarios();
+        case '7': ordenar_decrescente_pelo_nome_dos_funcionarios();
+                  break;
+        case '8': ordenar_crescente_pelo_codigo_dos_funcionarios();
+                  pos=busca_binaria_funcionario();
+                       if (pos==-1) printf("\n Nome não encontrado");
+                           else printf("\n Nome encontrado e esta no %d %c registro do arquivo", pos+1, 167);
+                           getch();
+                       break;
+        case '9': printf("\n saindo ...\n");
+                  break;
+        default : printf("\n opcao %c invalida  ",opc);
+                  printf("\n apertar o teclado");
+                  getch();
+                  break;
+       }
+    } while (opc!= '9');
+ return (0);
+}
+
+void cadastrar_funcionarios()
+{  char op;
+   if ((fptr=fopen("funcionario.dados", "rb+"))==NULL)
+     { if ((fptr=fopen("funcionario.dados", "wb"))==NULL)
+                { printf("\n ERRO");
+                  exit(1);
+                }
+     }
+    do
+    {   setbuf(stdin, NULL);
+        printf("\n Entre com o nome do funcionario: ");
+        scanf("%[^\n]",f.nome);
+        printf("\n Entre com o codigo: ");
+        scanf("%d",&f.codigo);
+        printf("\n Entre com o salario: ");
+        scanf("%f",&f.salario);
+        f.e=0;
+        fseek(fptr,0,2);
+        fwrite(&f, sizeof(f),1,fptr);
+        printf("\n Deseja Cadadastrar outro (S/N)");
+        op=getche();
+    } while ((op=='S')|| (op=='s'));
+    fclose(fptr);
+}
+void consultar_todos_funcionarios()
+{
+    if ((fptr=fopen("funcionario.dados", "rb"))==NULL)
+                { printf("\n ERRO");
+                  exit(1);
+                }
+    fseek(fptr,0,0);
+    while (fread(&f, sizeof(f),1,fptr))
+    {
+        if (f.e==0)
+        {
+            printf("\n\n Nome: %s ", f.nome);
+            printf("\n Codigo: %d", f.codigo);
+            printf("\n Salario: %.2f", f.salario);
+
+
+        }
+    }
+    getch();
+    fclose(fptr);
+
+}
+void alterar_funcionarios()
+{ float codigoaux;
+    if ((fptr=fopen("funcionario.dados", "rb+"))==NULL)
+                { printf("\n ERRO");
+                  exit(1);
+                }
+    printf("\n Entre com código do funcionário para alterar o salario: ");
+    scanf("%f",&codigoaux);
+    while (fread(&f, sizeof(f),1,fptr))
+    {  if (f.codigo==codigoaux)
+        if (f.e==0)
+        {
+         printf("\n Entre com o novo salario do funcionario de codigo %d: ", f.codigo);
+         scanf("%f",&f.salario);
+         fseek(fptr,ftell(fptr)-sizeof(f),0); /*ou fseek(fptr,-sizeof(f),1); */
+         fwrite(&f,sizeof(f),1,fptr);
+         fseek(fptr,0,2);
+        }
+    }
+    fclose(fptr);
+}
+void exclusao_logica_funcionarios()
+{ float codigoaux;
+    if ((fptr=fopen("funcionario.dados", "rb+"))==NULL)
+                { printf("\n ERRO");
+                  exit(1);
+                }
+    printf("\n Entre com código do funcionário para ser excluido logicamente ");
+    scanf("%f",&codigoaux);
+    while (fread(&f, sizeof(f),1,fptr))
+    {  if (f.codigo==codigoaux)
+        if (f.e==0)
+        {
+         f.e=1;
+         fseek(fptr,ftell(fptr)-sizeof(f),0); /*ou fseek(fptr,-sizeof(f),1); */
+         fwrite(&f,sizeof(f),1,fptr);
+         fseek(fptr,0,2);
+        }
+    }
+    fclose(fptr);
+}
+void exclusao_fisica_funcionarios()
+{ FILE *fptraux, *fptrback;
+  if ((fptr=fopen("funcionario.dados", "rb"))==NULL)
+                { printf("\n ERRO");
+                  exit(1);
+                }
+  if ((fptraux=fopen("auxiliar.dados", "wb"))==NULL)
+                { printf("\n ERRO");
+                  exit(1);
+                }
+  if ((fptrback=fopen("backfunc.dados", "rb+"))==NULL)
+     { if ((fptrback=fopen("backfunc.dados", "wb"))==NULL)
+                { printf("\n ERRO");
+                  exit(1);
+                }
+     }
+   fseek(fptr,0,0);
+   while (fread(&f, sizeof(f),1,fptr))
+    {
+        if (f.e==0)  { fseek(fptraux,0,2);
+                       fwrite(&f,sizeof(f),1,fptraux);
+                     }
+                else { fseek(fptrback,0,2);
+                       fwrite(&f,sizeof(f),1,fptrback);
+                     }
+    }
+    fclose(fptr);
+    fclose(fptraux);
+    fclose(fptrback);
+    remove("funcionario.dados");
+    rename("auxiliar.dados","funcionario.dados");
+
+}
